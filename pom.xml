@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.bricklyworld</groupId>
+    <artifactId>BricklyExpedition</artifactId>
+    <version>0.1.0-alpha</version>
+    <packaging>jar</packaging>
+
+    <name>BricklyExpedition</name>
+    <description>
+        PvPvE extraction raid mode for the BricklyWorld server (Purpur 26.2 / Minecraft 1.20.1).
+        Stage A (Foundation): ZoneManifest data model, cuboid zone bounds, delta-journal world
+        restore, raid state machine skeleton, zone pool rotation, plus a first cut of the
+        anti-resource-extraction rules (ground dig ban + block-drop remap).
+    </description>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <repositories>
+        <!-- Paper / Purpur API -->
+        <repository>
+            <id>papermc</id>
+            <url>https://repo.papermc.io/repository/maven-public/</url>
+        </repository>
+        <!-- Multiverse-Core (world management) -->
+        <repository>
+            <id>onarandombox</id>
+            <url>https://repo.onarandombox.com/content/groups/public/</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <!--
+          Targeting Paper API 1.20.1 because Purpur build 26.2 (the server's reported
+          build) tracks Minecraft 1.20.1. Purpur is API-compatible with Paper for
+          everything we use in Stage A, so we don't need the Purpur-specific API jar
+          yet - add org.purpurmc.purpur:purpur-api later if/when we touch a
+          Purpur-only config or event.
+        -->
+        <dependency>
+            <groupId>io.papermc.paper</groupId>
+            <artifactId>paper-api</artifactId>
+            <version>1.20.1-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!--
+          Multiverse-Core: BricklyExpedition does not manage world files itself -
+          it resolves/teleports into whichever world(s) Multiverse-Core has loaded
+          and registered, and leaves world creation/registration to it. Version
+          pinned to a recent 4.x release; bump to match whatever build is actually
+          installed on the server if the API differs.
+        -->
+        <dependency>
+            <groupId>com.onarandombox.multiversecore</groupId>
+            <artifactId>Multiverse-Core</artifactId>
+            <version>4.3.1</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>${project.name}-${project.version}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <release>17</release>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+            </plugin>
+        </plugins>
+    </build>
+</project>

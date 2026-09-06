@@ -1,0 +1,247 @@
+# BricklyExpedition - Stage A configuration
+# Every value here is a starting point from the concept doc, not a final
+# balance pass - tune freely, nothing here requires a recompile.
+
+zones:
+  count: 8
+
+raid:
+  # 30 min session, last 2 of which are the "apocalypse" phase.
+  active-duration-seconds: 1680        # 28 min
+  apocalypse-duration-seconds: 120     # 2 min
+  # Evac hatch channel times (paid = faster) - see the #evac markers.
+  prep-duration-paid-seconds: 30
+  prep-duration-free-seconds: 90
+  evac-key-price: 1500
+
+  # Stage C entry flow: "встаешь в очередь" - lobby-wait-seconds is how long
+  # the queue stays open collecting players once the first one joins (a
+  # countdown broadcast to everyone waiting); prep-countdown-seconds is the
+  # short final "приготовьтесь" window right before teleporting everyone in.
+  lobby-wait-seconds: 45
+  prep-countdown-seconds: 10
+
+  # Where a player lands after evacuating (or if their raid is force-ended).
+  # World name blank -> falls back to the first loaded world's spawn point
+  # (logged once as a warning) - set this once BricklyWorld's hub is known.
+  hub:
+    world: ""
+    x: 0.0
+    y: 100.0
+    z: 0.0
+    yaw: 0.0
+    pitch: 0.0
+
+anti-extraction:
+  # Any block at or below (zone floor Y + this offset) cannot be broken at
+  # all - no event, no drop, no journal entry (and, since 2026-09-06, the
+  # same rule also blocks any explosion from digging through the floor -
+  # see BlockChangeListener#onEntityExplode). Keep at 0 unless a zone's
+  # floor needs a buffer.
+  ground-floor-y-offset: 0
+
+  # Material -> custom drop remap. Breaking the key on the left drops the
+  # material on the right instead of its real vanilla drop, so nothing of
+  # ordinary economic value leaves an expedition. Anything NOT listed here
+  # drops normally (vanilla loot untouched, this table is scoped to blocks
+  # deliberately worth guarding, e.g. this world's ore/valuable blocks).
+  block-remap:
+    COPPER_BLOCK: OAK_PLANKS
+    IRON_BLOCK: OAK_PLANKS
+    GOLD_BLOCK: OAK_PLANKS
+    DIAMOND_BLOCK: OAK_PLANKS
+    EMERALD_BLOCK: OAK_PLANKS
+    NETHERITE_BLOCK: OAK_PLANKS
+    LAPIS_BLOCK: OAK_PLANKS
+    REDSTONE_BLOCK: OAK_PLANKS
+
+# Stage G - the post-raid "sell what you looted" screen. default-price is
+# used for any material not explicitly listed here (deliberately low -
+# "режь доходность сильно" - keep it a nice bonus, not economy-breaking).
+# These are placeholder values, same as the loot tiers below - a real pass
+# needs actual playtesting data, but every number here was chosen with an
+# eye on evac-key-price (1500) as the economy's real anchor: nothing in
+# this list is meant to make that price trivial to afford from one lucky
+# tier-10 pull alone.
+economy:
+  default-sell-price: 2
+  sell-prices:
+    IRON_INGOT: 8
+    GOLD_INGOT: 15
+    DIAMOND: 40
+    EMERALD: 25
+    NETHERITE_SCRAP: 90
+    NETHERITE_INGOT: 220
+    NETHER_STAR: 500
+    TOTEM_OF_UNDYING: 350
+    ENCHANTED_GOLDEN_APPLE: 300
+    ENCHANTED_BOOK: 120
+    EXPERIENCE_BOTTLE: 5
+    DIAMOND_BLOCK: 340
+    EMERALD_BLOCK: 220
+    NETHERITE_BLOCK: 1900
+    GUNPOWDER: 1
+    LEATHER: 1
+    # 2026-09-06 additions for the expanded loot pack below - modest,
+    # ordinary vanilla-adjacent values, nothing here approaches evac-key-price.
+    STICK: 1
+    BONE: 1
+    ROTTEN_FLESH: 1
+    GRAVEL: 1
+    GLASS_BOTTLE: 1
+    SLIME_BALL: 2
+    FLINT: 2
+    GOLD_NUGGET: 2
+    IRON_NUGGET: 2
+    COMPASS: 5
+    SPYGLASS: 10
+    FISHING_ROD: 6
+    LEATHER_CHESTPLATE: 5
+    IRON_CHESTPLATE: 25
+    DIAMOND_CHESTPLATE: 90
+    SPECTRAL_ARROW: 1
+    SHULKER_SHELL: 60
+    ECHO_SHARD: 30
+    RECOVERY_COMPASS: 20
+    GHAST_TEAR: 20
+    BEACON: 150
+    IRON_SWORD: 10
+    DIAMOND_SWORD: 60
+    BOW: 12
+    TIPPED_ARROW: 2
+    SHIELD: 8
+    SADDLE: 15
+    GOLDEN_APPLE: 20
+  # Name-specific overrides (exact display name match, colour codes and all)
+  # - lets a unique named artifact/legend be worth more than an ordinary
+  # unnamed copy of the same base material, without inflating that
+  # material's price everywhere else it's used. Kept well below
+  # evac-key-price (1500) and NETHERITE_BLOCK's 1900 on purpose - these are
+  # meant to feel special, not to trivialise the economy.
+  sell-prices-by-name:
+    '§5Артефакт: Реликвия': 650
+    '§5Артефакт: Ядро реактора': 380
+    '§6Легенда: Чип управления': 260
+    '§6Легенда: Слеза мира': 200
+    '§9Раритет: Маяк последней позиции': 110
+    '§9Раритет: Позывной маяк': 90
+    '§aРаритет: Оптика наблюдателя': 45
+    '§9Раритет: Схема тайника': 25
+    '§aТрофей: светящиеся стрелы': 3
+
+# Stage E - loot cache tiers. An admin places a chest/barrel at a LOOT_CACHE
+# marker and tags it with a tier id 1-10 (in the zone editor GUI); this is
+# what fills it every time the raid goes ACTIVE. open-seconds is how long a
+# player must channel next to the cache before it unlocks (design ask:
+# "чем круче лут тем дольше открывается"). Item pools below use vanilla
+# materials as placeholders for the concept doc's custom artifacts/treasure
+# items - a real named-item/enchant economy is a later pass once there's a
+# resource pack and custom item ids to hang it on; weight is relative, not
+# a percentage, and only matters relative to other entries in the same tier.
+#
+# CONTENT UPGRADE (2026-09-06, real request - "огромный гигантский пак
+# кастомного лута... от хуйни до легендарного, но не убивать экономику"):
+# every tier's pool below was expanded well past the original 3-4 entries,
+# and a recurring cast of named "artifact"/"legend"/"rarity" items (with
+# flavor lore) was added across tiers 3-10 so a rare pull actually reads as
+# a find, not just a bigger number - see economy.sell-prices-by-name above
+# for how these are priced independently of their base material.
+loot:
+  tiers:
+    1:
+      open-seconds: 4
+      items:
+        - {material: PAPER, min: 2, max: 5, weight: 10, name: "§7Кассовый жетон", lore: ["§8Мятая расписка без реальной ценности."]}
+        - {material: STRING, min: 1, max: 4, weight: 10}
+        - {material: ARROW, min: 4, max: 12, weight: 9}
+        - {material: COAL, min: 1, max: 3, weight: 7}
+        - {material: ROTTEN_FLESH, min: 1, max: 3, weight: 8, name: "§7Протухший паёк"}
+        - {material: GRAVEL, min: 2, max: 4, weight: 6, name: "§7Строительный мусор"}
+        - {material: STICK, min: 2, max: 5, weight: 8, name: "§7Обломок арматуры"}
+        - {material: IRON_NUGGET, min: 2, max: 4, weight: 6}
+        - {material: GLASS_BOTTLE, min: 1, max: 2, weight: 5, name: "§7Пустая фляга"}
+        - {material: BONE, min: 1, max: 3, weight: 6}
+    2:
+      open-seconds: 5
+      items:
+        - {material: IRON_NUGGET, min: 3, max: 6, weight: 10}
+        - {material: LEATHER, min: 1, max: 3, weight: 8}
+        - {material: COOKED_BEEF, min: 1, max: 2, weight: 8}
+        - {material: GUNPOWDER, min: 1, max: 3, weight: 6}
+        - {material: FLINT, min: 1, max: 3, weight: 6, name: "§7Кремень"}
+        - {material: STRING, min: 2, max: 5, weight: 5}
+        - {material: ARROW, min: 5, max: 10, weight: 6}
+        - {material: PAPER, min: 3, max: 8, weight: 6, name: "§7Кассовый жетон"}
+        - {material: SLIME_BALL, min: 1, max: 2, weight: 4, name: "§7Странный сгусток"}
+    3:
+      open-seconds: 6
+      items:
+        - {material: IRON_INGOT, min: 1, max: 3, weight: 10}
+        - {material: EXPERIENCE_BOTTLE, min: 1, max: 3, weight: 6}
+        - {material: IRON_SWORD, min: 1, max: 1, weight: 5}
+        - {material: SHIELD, min: 1, max: 1, weight: 4}
+        - {material: LEATHER_CHESTPLATE, min: 1, max: 1, weight: 5, name: "§fПоношенный бронежилет"}
+        - {material: FISHING_ROD, min: 1, max: 1, weight: 4, name: "§fКрюк-кошка (трофей)"}
+        - {material: IRON_NUGGET, min: 4, max: 8, weight: 8}
+        - {material: COMPASS, min: 1, max: 1, weight: 2, name: "§9Раритет: Позывной маяк", lore: ["§7Слабо пищит в сторону чего-то", "§7ценного поблизости."]}
+    4:
+      open-seconds: 8
+      items:
+        - {material: GOLD_INGOT, min: 1, max: 3, weight: 9}
+        - {material: IRON_CHESTPLATE, min: 1, max: 1, weight: 5}
+        - {material: BOW, min: 1, max: 1, weight: 5}
+        - {material: TIPPED_ARROW, min: 3, max: 8, weight: 6}
+        - {material: GOLD_NUGGET, min: 2, max: 6, weight: 8, name: "§fЛом позолоты"}
+        - {material: EXPERIENCE_BOTTLE, min: 2, max: 4, weight: 6}
+        - {material: SPYGLASS, min: 1, max: 1, weight: 3, name: "§aРаритет: Оптика наблюдателя", lore: ["§7С такой виднее подходы к точкам эвакуации."]}
+    5:
+      open-seconds: 10
+      items:
+        - {material: DIAMOND, min: 1, max: 2, weight: 8}
+        - {material: IRON_BLOCK, min: 1, max: 1, weight: 6}
+        - {material: ENCHANTED_BOOK, min: 1, max: 1, weight: 6, name: "§dЗачарованный фолиант"}
+        - {material: GOLDEN_APPLE, min: 1, max: 2, weight: 5}
+        - {material: ECHO_SHARD, min: 1, max: 1, weight: 3, name: "§9Раритет: Схема тайника", lore: ["§7Обрывок карты - где-то рядом мог", "§7остаться нетронутый тайник."]}
+        - {material: GHAST_TEAR, min: 1, max: 1, weight: 1, name: "§6Легенда: Слеза мира", lore: ["§7Говорят, такие остаются только там,", "§7где апокалипсис уже проходил однажды."]}
+    6:
+      open-seconds: 12
+      items:
+        - {material: DIAMOND, min: 2, max: 4, weight: 8}
+        - {material: DIAMOND_SWORD, min: 1, max: 1, weight: 5}
+        - {material: DIAMOND_CHESTPLATE, min: 1, max: 1, weight: 5}
+        - {material: EMERALD, min: 2, max: 5, weight: 6}
+        - {material: RECOVERY_COMPASS, min: 1, max: 1, weight: 3, name: "§9Раритет: Маяк последней позиции", lore: ["§7Указывает туда, где кто-то недавно", "§7погиб в этой экспедиции."]}
+        - {material: SPECTRAL_ARROW, min: 3, max: 6, weight: 5, name: "§aТрофей: светящиеся стрелы"}
+    7:
+      open-seconds: 15
+      items:
+        - {material: NETHERITE_SCRAP, min: 1, max: 2, weight: 7}
+        - {material: DIAMOND_BLOCK, min: 1, max: 1, weight: 4}
+        - {material: ENCHANTED_GOLDEN_APPLE, min: 1, max: 1, weight: 3, name: "§6Сокровище: Королевское яблоко"}
+        - {material: SADDLE, min: 1, max: 1, weight: 5, name: "§eТрофей"}
+        - {material: SHULKER_SHELL, min: 1, max: 1, weight: 2, name: "§5Артефакт: Ядро реактора", lore: ["§7Внутри что-то тихо гудит,", "§7будто до сих пор питается от чего-то."]}
+    8:
+      open-seconds: 18
+      items:
+        - {material: NETHERITE_INGOT, min: 1, max: 1, weight: 6}
+        - {material: NETHER_STAR, min: 1, max: 1, weight: 2, name: "§5Артефакт: Осколок звезды"}
+        - {material: DIAMOND_BLOCK, min: 1, max: 2, weight: 5}
+        - {material: EMERALD_BLOCK, min: 1, max: 1, weight: 5}
+        - {material: ECHO_SHARD, min: 1, max: 1, weight: 2, name: "§6Легенда: Чип управления", lore: ["§7Реагирует на близость станций эвакуации.", "§7Возможно, часть какой-то системы."]}
+    9:
+      open-seconds: 22
+      items:
+        - {material: NETHERITE_INGOT, min: 2, max: 3, weight: 6}
+        - {material: TOTEM_OF_UNDYING, min: 1, max: 1, weight: 3}
+        - {material: NETHER_STAR, min: 1, max: 2, weight: 3, name: "§5Артефакт: Осколок звезды"}
+        - {material: BEACON, min: 1, max: 1, weight: 2, name: "§5Артефакт: Реликвия"}
+        - {material: GHAST_TEAR, min: 1, max: 2, weight: 2, name: "§6Легенда: Слеза мира"}
+    10:
+      open-seconds: 30
+      items:
+        - {material: NETHERITE_BLOCK, min: 1, max: 1, weight: 3, name: "§4§lСокровище экспедиции"}
+        - {material: NETHER_STAR, min: 2, max: 3, weight: 4, name: "§5Артефакт: Осколок звезды"}
+        - {material: TOTEM_OF_UNDYING, min: 1, max: 2, weight: 4}
+        - {material: ENCHANTED_GOLDEN_APPLE, min: 2, max: 3, weight: 3, name: "§6Сокровище: Королевское яблоко"}
+        - {material: SHULKER_SHELL, min: 1, max: 2, weight: 2, name: "§5Артефакт: Ядро реактора"}
+        - {material: BEACON, min: 1, max: 1, weight: 2, name: "§5Артефакт: Реликвия"}

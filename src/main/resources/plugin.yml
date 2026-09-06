@@ -1,0 +1,33 @@
+name: BricklyExpedition
+version: '0.1.0-alpha'
+main: com.bricklyworld.expedition.BricklyExpeditionPlugin
+api-version: '1.20'
+author: BricklyWorld
+description: >
+  PvPvE extraction raid mode for BricklyWorld. Stage A (foundation): zone
+  manifests, cuboid zone bounds, delta-journal world restore, raid state
+  machine, zone pool rotation, ground-dig ban and block-drop remap.
+
+# Soft-depend: we use Multiverse-Core's world manager when it's present to
+# resolve which Bukkit World a zone's worldName points at, but we run fine
+# without it too (falls back to Bukkit.getWorld()).
+softdepend: [Multiverse-Core]
+
+commands:
+  bwexpedition:
+    description: BricklyExpedition - вход в экспедицию и админ-инструменты
+    usage: |
+      /bwexpedition join | leave | buykey | balance   (для игроков)
+      /bwexpedition menu | edit <id> | list | create <id> <world> | wand |
+      /bwexpedition setbounds <id> | addmarker <id> <type> [meta] |
+      /bwexpedition selftest <id> | startraid <id> | forceend <id>   (админ)
+    # No blanket command permission: the player-facing subcommands (join,
+    # leave, buykey, balance) must stay open to everyone, so
+    # BWExpeditionCommand checks bricklyexpedition.admin itself only for
+    # the admin subcommands, instead of gating the whole command here.
+    aliases: [bwe, expedition]
+
+permissions:
+  bricklyexpedition.admin:
+    description: Full access to BricklyExpedition admin/zone-editing tools
+    default: op
